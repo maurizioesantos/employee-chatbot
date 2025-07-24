@@ -25,68 +25,69 @@
       <button id="sendbtn" type="submit">Send</button>
     </form>
   </div>
-<script>
-const API_URL = "https://api.chatbot.com/query";
-const BOT_ID = "678e912a811cdc00074b0a90";         // Your bot ID here
-const TOKEN = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // Your API Key here
+  <script>
+    const API_URL = "https://api.chatbot.com/query";
+    const BOT_ID = "678e912a811cdc00074b0a90";         // Your bot ID here
+    const TOKEN = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // Your API Key here
 
-let sessionId = null;
-const chatlog = document.getElementById('chatlog');
-const input = document.getElementById('userinput');
-const form = document.getElementById('inputrow');
-const sendBtn = document.getElementById('sendbtn');
+    let sessionId = null;
+    // Move script to bottom so DOM elements always exist!
+    const chatlog = document.getElementById('chatlog');
+    const input = document.getElementById('userinput');
+    const form = document.getElementById('inputrow');
+    const sendBtn = document.getElementById('sendbtn');
 
-// Add a message to chat
-function addMsg(who, text) {
-  let div = document.createElement('div');
-  div.className = 'msg ' + who;
-  div.textContent = text;
-  chatlog.appendChild(div);
-  chatlog.scrollTop = chatlog.scrollHeight;
-}
-
-// Call ChatBot API (Debug mode: shows raw JSON response)
-async function sendToBot(msg) {
-  sendBtn.disabled = true;
-  addMsg('user', msg);
-  // Start new session if first msg
-  if (!sessionId) {
-    sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
-  }
-  let payload = {
-    "session_id": sessionId,
-    "bot_id": BOT_ID,
-    "message": {
-      "content": msg,
-      "type": "text"
+    // Add a message to chat
+    function addMsg(who, text) {
+      let div = document.createElement('div');
+      div.className = 'msg ' + who;
+      div.textContent = text;
+      chatlog.appendChild(div);
+      chatlog.scrollTop = chatlog.scrollHeight;
     }
-  };
-  try {
-    let res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + TOKEN,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error("Network/API error");
-    let data = await res.json();
-    // --- DEBUG: Show the entire API response in the chat ---
-    addMsg('bot', JSON.stringify(data, null, 2));
-  } catch (e) {
-    addMsg('bot', '[Bot error: ' + e.message + ']');
-  }
-  sendBtn.disabled = false;
-}
 
-form.onsubmit = function(e) {
-  e.preventDefault();
-  let val = input.value.trim();
-  if (!val) return;
-  sendToBot(val);
-  input.value = "";
-};
-</script>
+    // Call ChatBot API (Debug mode: shows raw JSON response)
+    async function sendToBot(msg) {
+      sendBtn.disabled = true;
+      addMsg('user', msg);
+      // Start new session if first msg
+      if (!sessionId) {
+        sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
+      }
+      let payload = {
+        "session_id": sessionId,
+        "bot_id": BOT_ID,
+        "message": {
+          "content": msg,
+          "type": "text"
+        }
+      };
+      try {
+        let res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + TOKEN,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Network/API error");
+        let data = await res.json();
+        // --- DEBUG: Show the entire API response in the chat ---
+        addMsg('bot', JSON.stringify(data, null, 2));
+      } catch (e) {
+        addMsg('bot', '[Bot error: ' + e.message + ']');
+      }
+      sendBtn.disabled = false;
+    }
+
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      let val = input.value.trim();
+      if (!val) return;
+      sendToBot(val);
+      input.value = "";
+    };
+  </script>
 </body>
 </html>
