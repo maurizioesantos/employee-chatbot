@@ -45,7 +45,7 @@ function addMsg(who, text) {
   chatlog.scrollTop = chatlog.scrollHeight;
 }
 
-// Call ChatBot API (DEBUG VERSION)
+// Call ChatBot API (Debug: shows API response)
 async function sendToBot(msg) {
   sendBtn.disabled = true;
   addMsg('user', msg);
@@ -53,7 +53,7 @@ async function sendToBot(msg) {
     sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
   }
   let payload = {
-    "session_id": sessionId,
+    "sessionId": sessionId, // <--- This is the key fix!
     "bot_id": BOT_ID,
     "message": {
       "content": msg,
@@ -71,8 +71,9 @@ async function sendToBot(msg) {
     });
     if (!res.ok) throw new Error("Network/API error");
     let data = await res.json();
-    // DEBUG: Show entire API response in chat!
+    // DEBUG: Show the entire API response in the chat!
     addMsg('bot', JSON.stringify(data, null, 2));
+    // Optional: After confirming correct response, replace above with reply-parsing logic
   } catch (e) {
     addMsg('bot', '[Bot error: ' + e.message + ']');
   }
