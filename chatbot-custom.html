@@ -1,62 +1,132 @@
-<script>
-const API_URL = "https://api.chatbot.com/query";
-const BOT_ID = "678e912a811cdc00074b0a90";         // Your bot ID here
-const TOKEN = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // Your API Key here
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee ChatBot</title>
 
-let sessionId = null;
-const chatlog = document.getElementById('chatlog');
-const input = document.getElementById('userinput');
-const form = document.getElementById('inputrow');
-const sendBtn = document.getElementById('sendbtn');
+  <style>
+    body { font-family: Arial, sans-serif; background:#f9f9f9; }
+    #chatbox { width:100%; max-width:420px; margin:40px auto;
+               background:#fff; border-radius:12px;
+               box-shadow:0 4px 30px rgba(0,0,0,0.1); padding:20px; }
+    #chatlog { height:320px; overflow-y:auto; border:1px solid #eee;
+               border-radius:6px; padding:10px; margin-bottom:14px;
+               background:#fafbfc; }
+    .msg      { margin-bottom:8px; white-space:pre-wrap; }
+    .msg.user { text-align:right; }
+    .msg.bot  { text-align:left;  color:#0a6496; }
+    #inputrow { display:flex; }
+    #userinput{ flex:1; padding:8px 12px; border-radius:6px;
+                border:1px solid #ddd; font-size:1em; }
+    #sendbtn  { margin-left:8px; padding:8px 18px; background:#0a6496;
+                color:#fff; border:none; border-radius:6px;
+                font-weight:bold; cursor:pointer; }
+    #sendbtn:disabled { background:#b8b8b8; }
+  </style>
+</head>
 
-// Add a message to chat
-function addMsg(who, text) {
-  let div = document.createElement('div');
-  div.className = 'msg ' + who;
-  div.textContent = text;
-  chatlog.appendChild(div);
-  chatlog.scrollTop = chatlog.scrollHeight;
-}
+<body>
+  <div id="chatbox">
+    <h2 style="margin-top:0;">Employee ChatBot</h2>
 
-// Call ChatBot API (Debug: shows API response)
-async function sendToBot(msg) {
-  sendBtn.disabled = true;
-  addMsg('user', msg);
-  if (!sessionId) {
-    sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
-  }
-  let payload = {
-    "sessionId": sessionId, // <--- Capital "I"
-    "botId": BOT_ID,        // <--- Capital "I" in Id, no underscore
-    "message": {
-      "content": msg,
-      "type": "text"
-    }
-  };
-  try {
-    let res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + TOKEN,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
+    <div id="chatlog"></div>
+
+    <form id="inputrow" autocomplete="off">
+      <input id="userinput" placeholder="Type your message…" autocomplete="off">
+      <button id="sendbtn" type="submit">Send</button>
+    </form>
+  </div>
+
+  <!--  The script is deferred until the DOM is fully built  -->
+  <script defer>
+  (function(){
+
+    /* ---------- 1.  CONFIG ---------- */
+    const API_URL = "https://api.chatbot.com/query";
+    const BOT_ID  = "678e912a811cdc00074b0a90";          //  <<<<  your botId
+    const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";    //  <<<<  your API key
+
+    /* ---------- 2.  WAIT UNTIL DOM READY ---------- */
+    window.addEventListener('DOMContentLoaded', () => {
+
+      /* cache DOM handles */
+      const chatlog = document.getElementById('chatlog');
+      const input   = document.getElementById('userinput');
+      const form    = document.getElementById('inputrow');
+      const sendBtn = document.getElementById('sendbtn');
+
+      if (!form || !chatlog || !input || !sendBtn){
+        console.error('ChatBot‑page: critical DOM elements missing.');
+        return;
+      }
+
+      /* helper to add messages */
+      function addMsg(who, text){
+        const div   = document.createElement('div');
+        div.className = 'msg ' + who;
+        div.textContent = text;
+        chatlog.appendChild(div);
+        chatlog.scrollTop = chatlog.scrollHeight;
+      }
+
+      /* ---------- 3.  SEND TO API ---------- */
+      let sessionId = null;
+
+      async function sendToBot(text){
+        addMsg('user', text);
+        sendBtn.disabled = true;
+
+        if (!sessionId){
+          sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
+        }
+
+        const payload = {
+          sessionId : sessionId,
+          botId     : BOT_ID,
+          message   : { content:text, type:'text' }
+        };
+
+        try{
+          const res = await fetch(API_URL,{
+            method:'POST',
+            headers:{
+              'Authorization':'Bearer '+TOKEN,
+              'Content-Type' :'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if(!res.ok){
+            throw new Error(res.status + ' ' + res.statusText);
+          }
+
+          const data = await res.json();
+
+          /* ---------- 4.  DEBUG  – show raw reply ---------- */
+          addMsg('bot', JSON.stringify(data,null,2));
+
+          /* ----  replace the two lines above with
+                   your own parsing once you confirm the
+                   structure that ChatBot.com returns ---- */
+
+        }catch(err){
+          console.error(err);
+          addMsg('bot','[API error] ' + err.message);
+        }finally{
+          sendBtn.disabled = false;
+        }
+      }
+
+      /* ---------- 5.  FORM HANDLER ---------- */
+      form.addEventListener('submit', e=>{
+        e.preventDefault();
+        const val = input.value.trim();
+        if (val){ sendToBot(val); }
+        input.value='';
+      });
+
     });
-    if (!res.ok) throw new Error("Network/API error");
-    let data = await res.json();
-    // DEBUG: Show the entire API response in the chat!
-    addMsg('bot', JSON.stringify(data, null, 2));
-  } catch (e) {
-    addMsg('bot', '[Bot error: ' + e.message + ']');
-  }
-  sendBtn.disabled = false;
-}
-
-form.onsubmit = function(e) {
-  e.preventDefault();
-  let val = input.value.trim();
-  if (!val) return;
-  sendToBot(val);
-  input.value = "";
-};
-</script>
+  })();
+  </script>
+</body>
+</html>
