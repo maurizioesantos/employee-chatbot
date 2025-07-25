@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <title>Employee ChatBot</title>
 <style>
- body{font-family:Arial, sans-serif;background:#f9f9f9}
- #chatbox{max-width:420px;margin:40px auto;background:#fff;border-radius:12px;
-          box-shadow:0 4px 30px rgba(0,0,0,.1);padding:20px}
- #chatlog{height:320px;overflow-y:auto;border:1px solid #eee;border-radius:6px;
-          padding:10px;margin-bottom:14px;background:#fafbfc}
- .msg{margin-bottom:8px;white-space:pre-wrap}
- .msg.user{text-align:right}.msg.bot{text-align:left;color:#0a6496}
- #inputrow{display:flex}
- #userinput{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
- #sendbtn{margin-left:8px;padding:8px 18px;background:#0a6496;color:#fff;
-          border:none;border-radius:6px;font-weight:bold;cursor:pointer}
- #sendbtn:disabled{background:#b8b8b8}
+  body{font-family:Arial, sans-serif;background:#f9f9f9}
+  #chatbox{max-width:420px;margin:40px auto;background:#fff;border-radius:12px;
+           box-shadow:0 4px 30px rgba(0,0,0,.1);padding:20px}
+  #chatlog{height:320px;overflow-y:auto;border:1px solid #eee;border-radius:6px;
+           padding:10px;margin-bottom:14px;background:#fafbfc}
+  .msg{margin-bottom:8px;white-space:pre-wrap}
+  .msg.user{text-align:right}
+  .msg.bot {text-align:left;color:#0a6496}
+  #inputrow{display:flex}
+  #userinput{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
+  #sendbtn{margin-left:8px;padding:8px 18px;background:#0a6496;color:#fff;border:none;
+           border-radius:6px;font-weight:bold;cursor:pointer}
+  #sendbtn:disabled{background:#b8b8b8}
 </style>
 </head>
 <body>
@@ -29,55 +30,70 @@
 </div>
 
 <script>
+/* 1 ▸ CONFIG --------------------------------------------------------------- */
 const API_URL = "https://api.chatbot.com/query";
-const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // client access token
+const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // client‑access token
 
+/* 2 ▸ DOM Handles ---------------------------------------------------------- */
 const chatlog = document.getElementById('chatlog');
 const form    = document.getElementById('inputrow');
 const input   = document.getElementById('userinput');
 const sendBtn = document.getElementById('sendbtn');
 
+/* 3 ▸ Helpers -------------------------------------------------------------- */
 function addMsg(who,text){
   const d=document.createElement('div');
-  d.className='msg '+who; d.textContent=text;
-  chatlog.appendChild(d); chatlog.scrollTop=chatlog.scrollHeight;
+  d.className='msg '+who;
+  d.textContent=text;
+  chatlog.appendChild(d);
+  chatlog.scrollTop=chatlog.scrollHeight;
 }
 
+/* 4 ▸ Send ---------------------------------------------------------------- */
 let sessionId=null;
 
-async function sendToBot(txt){
+async function sendToBot(text){
   if(!sessionId) sessionId='user-'+Date.now()+'-'+Math.floor(Math.random()*1e4);
-  addMsg('user',txt); sendBtn.disabled=true;
+  addMsg('user',text); sendBtn.disabled=true;
 
   const payload={
-    sessionId:sessionId,
-    message:{content:txt,type:"text"}
+    sessionId : sessionId,          // camelCase
+    message   : {content:text,type:"text"}
   };
 
   try{
-    const r=await fetch(API_URL,{
-      method:"POST",
+    const res = await fetch(API_URL,{
+      method :'POST',
       headers:{
-        "Authorization":"Bearer "+TOKEN,
-        "Content-Type":"application/json"
+        'Authorization':'Bearer '+TOKEN,
+        'Content-Type' :'application/json'
       },
       body:JSON.stringify(payload)
     });
-    const data=await r.json();
 
-    /* ---- parse the first plain‑text response ---- */
-    let botReply='[no reply]';
+    if(!res.ok) throw new Error(res.status+' '+res.statusText);
+    const data = await res.json();
+    console.log('ChatBot raw →',data);      // <‑‑ copy from console if needed
+
+    /* 5 ▸ Minimal universal parser */
+    let reply='[no reply]';
     if(Array.isArray(data.responses)){
-      const first=data.responses.find(m=>m.type==="text");
-      if(first) botReply=first.message;
+      const t=data.responses.find(r=>r.type==='text');
+      const c=data.responses.find(r=>r.type==='card');
+      if(t)      reply=t.message;
+      else if(c) reply=c.title||c.subtitle||'[card]';
     }
-    addMsg('bot',botReply);
+    addMsg('bot',reply);
 
   }catch(e){
-    console.error(e); addMsg('bot',"[API error] "+e.message);
-  }finally{ sendBtn.disabled=false; }
+    console.error(e);
+    addMsg('bot','[API error] '+e.message);
+  }finally{
+    sendBtn.disabled=false;
+  }
 }
 
+/* 6 ▸ Form handler -------------------------------------------------------- */
 form.addEventListener('submit',e=>{
   e.preventDefault();
   const v=input.value.trim();
