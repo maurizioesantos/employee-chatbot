@@ -4,19 +4,18 @@
 <meta charset="UTF-8">
 <title>Employee ChatBot</title>
 <style>
-  body{font-family:Arial, sans-serif;background:#f9f9f9}
-  #chatbox{max-width:420px;margin:40px auto;background:#fff;border-radius:12px;
-           box-shadow:0 4px 30px rgba(0,0,0,.1);padding:20px}
-  #chatlog{height:320px;overflow-y:auto;border:1px solid #eee;border-radius:6px;
-           padding:10px;margin-bottom:14px;background:#fafbfc}
-  .msg{margin-bottom:8px;white-space:pre-wrap}
-  .msg.user{text-align:right}
-  .msg.bot {text-align:left;color:#0a6496}
-  #inputrow{display:flex}
-  #userinput{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
-  #sendbtn{margin-left:8px;padding:8px 18px;background:#0a6496;color:#fff;border:none;
-           border-radius:6px;font-weight:bold;cursor:pointer}
-  #sendbtn:disabled{background:#b8b8b8}
+ body{font-family:Arial,sans-serif;background:#f9f9f9}
+ #chatbox{max-width:420px;margin:40px auto;background:#fff;border-radius:12px;
+          box-shadow:0 4px 30px rgba(0,0,0,.1);padding:20px}
+ #chatlog{height:320px;overflow-y:auto;border:1px solid #eee;border-radius:6px;
+          padding:10px;margin-bottom:14px;background:#fafbfc}
+ .msg{margin-bottom:8px;white-space:pre-wrap}
+ .msg.user{text-align:right}.msg.bot{text-align:left;color:#0a6496}
+ #inputrow{display:flex}
+ #userinput{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px}
+ #sendbtn{margin-left:8px;padding:8px 18px;background:#0a6496;color:#fff;border:none;
+          border-radius:6px;font-weight:bold;cursor:pointer}
+ #sendbtn:disabled{background:#b8b8b8}
 </style>
 </head>
 <body>
@@ -30,17 +29,17 @@
 </div>
 
 <script>
-/* 1 ▸ CONFIG --------------------------------------------------------------- */
+/* CONFIG ------------------------------------------------------------------ */
 const API_URL = "https://api.chatbot.com/query";
-const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // client‑access token
+const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";   // client access token
 
-/* 2 ▸ DOM Handles ---------------------------------------------------------- */
+/* DOM handles ------------------------------------------------------------- */
 const chatlog = document.getElementById('chatlog');
 const form    = document.getElementById('inputrow');
 const input   = document.getElementById('userinput');
 const sendBtn = document.getElementById('sendbtn');
 
-/* 3 ▸ Helpers -------------------------------------------------------------- */
+/* helpers ----------------------------------------------------------------- */
 function addMsg(who,text){
   const d=document.createElement('div');
   d.className='msg '+who;
@@ -49,7 +48,7 @@ function addMsg(who,text){
   chatlog.scrollTop=chatlog.scrollHeight;
 }
 
-/* 4 ▸ Send ---------------------------------------------------------------- */
+/* talk -------------------------------------------------------------------- */
 let sessionId=null;
 
 async function sendToBot(text){
@@ -57,8 +56,8 @@ async function sendToBot(text){
   addMsg('user',text); sendBtn.disabled=true;
 
   const payload={
-    sessionId : sessionId,          // camelCase
-    message   : {content:text,type:"text"}
+    sessionId : sessionId,        // camelCase per current spec
+    message   : { text:text }     // <-- correct shape
   };
 
   try{
@@ -73,15 +72,13 @@ async function sendToBot(text){
 
     if(!res.ok) throw new Error(res.status+' '+res.statusText);
     const data = await res.json();
-    console.log('ChatBot raw →',data);      // <‑‑ copy from console if needed
+    console.log('ChatBot raw →',data);      // inspect if needed
 
-    /* 5 ▸ Minimal universal parser */
+    /* pick first text answer */
     let reply='[no reply]';
     if(Array.isArray(data.responses)){
       const t=data.responses.find(r=>r.type==='text');
-      const c=data.responses.find(r=>r.type==='card');
-      if(t)      reply=t.message;
-      else if(c) reply=c.title||c.subtitle||'[card]';
+      if(t && t.message) reply=t.message;
     }
     addMsg('bot',reply);
 
@@ -93,7 +90,7 @@ async function sendToBot(text){
   }
 }
 
-/* 6 ▸ Form handler -------------------------------------------------------- */
+/* wire form --------------------------------------------------------------- */
 form.addEventListener('submit',e=>{
   e.preventDefault();
   const v=input.value.trim();
