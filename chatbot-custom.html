@@ -6,32 +6,29 @@
   <style>
     body { font-family: Arial, sans-serif; background: #f9f9f9; }
     #chatbox { 
-      width: 100%; max-width: 420px; margin: 40px auto;
-      background: #fff; border-radius: 12px;
-      box-shadow: 0 4px 30px rgba(0,0,0,0.1); padding: 20px;
+      width:100%; max-width:420px; margin:40px auto; 
+      background:#fff; border-radius:12px; 
+      box-shadow:0 4px 30px rgba(0,0,0,0.1); padding:20px;
     }
     #chatlog {
-      height: 320px; overflow-y: auto;
-      border: 1px solid #eee; border-radius: 6px;
-      padding: 10px; margin-bottom: 14px;
-      background: #fafbfc;
+      height:320px; overflow-y:auto;
+      border:1px solid #eee; border-radius:6px;
+      padding:10px; margin-bottom:14px; background:#fafbfc;
     }
-    .msg { margin-bottom: 8px; white-space: pre-wrap; }
-    .msg.user { text-align: right; }
-    .msg.bot  { text-align: left; color: #0a6496; }
-    #inputrow { display: flex; }
+    .msg { margin-bottom:8px; white-space:pre-wrap; }
+    .msg.user { text-align:right; }
+    .msg.bot  { text-align:left; color:#0a6496; }
+    #inputrow { display:flex; }
     #userinput {
-      flex: 1; padding: 8px 12px;
-      border-radius: 6px; border: 1px solid #ddd;
-      font-size: 1em;
+      flex:1; padding:8px 12px; border-radius:6px;
+      border:1px solid #ddd; font-size:1em;
     }
     #sendbtn {
-      margin-left: 8px; padding: 8px 18px;
-      background: #0a6496; color: #fff;
-      border: none; border-radius: 6px;
-      font-weight: bold; cursor: pointer;
+      margin-left:8px; padding:8px 18px; background:#0a6496;
+      color:#fff; border:none; border-radius:6px;
+      font-weight:bold; cursor:pointer;
     }
-    #sendbtn:disabled { background: #b8b8b8; }
+    #sendbtn:disabled { background:#b8b8b8; }
   </style>
 </head>
 <body>
@@ -39,30 +36,21 @@
     <h2 style="margin-top:0;">Employee ChatBot</h2>
     <div id="chatlog"></div>
     <form id="inputrow" autocomplete="off">
-      <input id="userinput" placeholder="Type your message…" autocomplete="off" />
+      <input id="userinput" placeholder="Type your message…" autocomplete="off">
       <button id="sendbtn" type="submit">Send</button>
     </form>
   </div>
 
-  <!-- Note: script is at the very end so all IDs exist -->
   <script>
-    // 1) CONFIG
     const API_URL = "https://api.chatbot.com/query";
-    const BOT_ID  = "678e912a811cdc00074b0a90";        // <-- bot_id
-    const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";  // <-- your API key
+    const BOT_ID  = "678e912a811cdc00074b0a90";
+    const TOKEN   = "_pR92WEOEetd6a6I2Xn0A9oz290o6NXK";
 
-    // 2) GRAB ELEMENTS
     const chatlog = document.getElementById('chatlog');
     const form    = document.getElementById('inputrow');
     const input   = document.getElementById('userinput');
     const sendBtn = document.getElementById('sendbtn');
 
-    if (!chatlog || !form || !input || !sendBtn) {
-      console.error("ChatBot page: missing DOM elements");
-      // Bail out if something is wrong
-    }
-
-    // 3) RENDER A MESSAGE
     function addMsg(who, text) {
       const d = document.createElement('div');
       d.className = 'msg ' + who;
@@ -71,48 +59,35 @@
       chatlog.scrollTop = chatlog.scrollHeight;
     }
 
-    // 4) CHATBOT CALL
     let sessionId = null;
     async function sendToBot(msg) {
       sendBtn.disabled = true;
       addMsg('user', msg);
 
-      // Create sessionId once
       if (!sessionId) {
         sessionId = 'user-' + Date.now() + '-' + Math.floor(Math.random()*10000);
       }
 
-      // === FIXED payload keys ===
       const payload = {
-        sessionId: sessionId,  // API wants this exact camelCase key
-        bot_id   : BOT_ID,     // API wants bot_id (snake_case)
-        message  : {
-          content: msg,
-          type   : "text"
-        }
+        sessionId: sessionId,  // correct camelCase
+        bot_id   : BOT_ID,     // correct snake_case
+        message  : { content: msg, type: "text" }
       };
 
       try {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: {
-            "Authorization" : "Bearer " + TOKEN,
-            "Content-Type"  : "application/json"
+            "Authorization": "Bearer " + TOKEN,
+            "Content-Type" : "application/json"
           },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) {
-          throw new Error(res.status + " " + res.statusText);
-        }
+        if (!res.ok) throw new Error(res.status + " " + res.statusText);
         const data = await res.json();
 
-        // **DEBUG**: show raw JSON so we can verify success
+        /* DEBUG: show raw JSON reply */
         addMsg('bot', JSON.stringify(data, null, 2));
-
-        // → Once you see a proper response, replace the line above with your
-        //   parsing logic, e.g.:
-        //   let reply = data.result.fulfillment.text || "[no reply]";
-        //   addMsg('bot', reply);
 
       } catch (err) {
         console.error(err);
@@ -122,7 +97,6 @@
       }
     }
 
-    // 5) FORM SUBMIT
     form.addEventListener('submit', e => {
       e.preventDefault();
       const v = input.value.trim();
